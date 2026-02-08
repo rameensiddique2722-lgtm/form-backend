@@ -3,6 +3,19 @@ const route = express.Router();
 const User = require("../Model/UserSchema.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../Middleware/AuthMiddleware.js");
+
+// Protected route
+route.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    // req.user is available from middleware
+    const user = await User.findById(req.user.id).select("-password");
+    res.status(200).json({ user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 // Signup route
 route.post("/signup", async (req, res) => {
@@ -37,42 +50,41 @@ route.post("/signup", async (req, res) => {
   }
 });
 //login
-route.post("/login",async(req,res)=>{
-   try {
-      //step 1 jo chaye hm login ma
-      const {email,password}=req.body;
-      //ab requires krna hy do cheezy fill ho to next move kry
-      if(!email||!password){
-         return res.status(400).json({ message: "All fields are required" });
-      }
-      //ab ma check krna match kr ra hy
-      const user = await User.findOne({ email });
+route.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-     //Compare password
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-    //AB JWT GENERATE KRWANA HY
-    const token=jwt.sign(
-      {
-         id:user._id,email:user.email
-      },
-      process.env.JWT_SECRET,{expiresIn:"7d"}
-    )
-    //Send response
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.status(200).json({
       message: "Login successful",
-      user: { id: user._id, name: user.name, email: user.email },
       token,
-    })
-   } catch (error) {
-      console.error("Signup Error:", err);
+      user: { id: user._id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ message: "Internal server error" });
-   }
-})
+  }
+});
+
 
 
 module.exports = route;

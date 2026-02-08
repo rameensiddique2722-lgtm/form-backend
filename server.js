@@ -21,7 +21,7 @@ app.get("/",(req, res)=>{
 mongoose.connect(process.env.MONGO_URL)
 .then(()=>console.log("Monogo is connected"))
 .catch(err=>console.log(err));
-// console.log("MONGO:", process.env.MONGO_URI);
+console.log("MONGO:", process.env.MONGO_URI);
 
 app.listen(PORT ,()=>{
     console.log(`server is running at ${PORT}`);
