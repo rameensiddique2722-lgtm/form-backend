@@ -1,6 +1,7 @@
 const express=require("express");
 const  mongoose = require("mongoose");
 const Route=require("../backend/Route/Route.js");
+const ProductRouter=require("../backend/Route/ProductsRoutes.js")
 const dotenv=require("dotenv");
 dotenv.config();
 const app=express();
@@ -13,6 +14,7 @@ const PORT=process.env.PORT;
 // console.log("PORT:", process.env.PORT);
 
 app.use("/api/user",Route);
+app.use("/products",ProductRouter);
 
 app.get("/",(req, res)=>{
     res.send("Backend is running")

@@ -4,6 +4,7 @@ const User = require("../Model/UserSchema.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../Middleware/AuthMiddleware.js");
+const { signupValidation, loginValidation } = require("../Middleware/AuthValidation.js");
 
 // Protected route
 route.get("/profile", authMiddleware, async (req, res) => {
@@ -18,7 +19,7 @@ route.get("/profile", authMiddleware, async (req, res) => {
 });
 
 // Signup route
-route.post("/signup", async (req, res) => {
+route.post("/signup",signupValidation, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -42,15 +43,19 @@ route.post("/signup", async (req, res) => {
     await newUser.save();
 
     // 5 Response
-    res.status(201).json({ message: "User created successfully", user: newUser });
+    res.status(201).json({ message: "User created successfully",
+      success:true,
+       user: newUser });
 
   } catch (err) {
     console.error("Signup Error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error",
+      success:false
+     });
   }
 });
 //login
-route.post("/login", async (req, res) => {
+route.post("/login",loginValidation, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -60,22 +65,24 @@ route.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(403).json({ message: "Invalid credentials",success:false });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(403).json({ message: "Invalid credentials" ,success:false });
     }
 
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "1min" }
     );
+    res.json({token});
 
     res.status(200).json({
       message: "Login successful",
+      success:true,
       token,
       user: { id: user._id, name: user.name, email: user.email },
     });
